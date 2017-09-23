@@ -5,11 +5,15 @@ defmodule SSCT do
     read_order_list()
     |> map_order_list
     # |> print_order_list
-    |> trade_cash
-    |> trade_wrappers
-    |> print_order_list
+    |> trade
+    # |> print_redemptions
+    |> write_order_list
 
     Supervisor.start_link [], strategy: :one_for_one
+  end
+
+  def trade(order_list) do
+    order_list |> trade_cash |> trade_wrappers
   end
 
   defp trade_cash(order_list) do
@@ -22,14 +26,9 @@ defmodule SSCT do
         "redemptions" => redemption
       } = order
 
-      IO.puts "cash: #{cash}, price: #{price}, " <>
-        "wrappers needed: #{wrappers_needed}, type: #{type}"
-
       number_can_buy =
         S.to_integer(cash) / S.to_integer(price) |> Float.floor |> trunc
       cash_remaining = S.to_integer(cash) - number_can_buy * S.to_integer(price)
-
-      IO.puts "spend #{number_can_buy * S.to_integer(price)} on #{number_can_buy} #{type} bars"
 
       updated_order = %{
         "cash" => cash_remaining,
@@ -38,8 +37,6 @@ defmodule SSCT do
         "type" => type,
         "redemptions" => %{redemption | type => number_can_buy}
       }
-
-      IO.puts "order after cash trade #{updated_order |> inspect}"
 
       [updated_order | list]
     end)
@@ -77,8 +74,6 @@ defmodule SSCT do
     {updated_wrappers, updated_redemption} =
       wrappers
       |> Enum.reduce({wrappers, redemption}, fn({type, count}, acc) ->
-        # require IEx; IEx.pry
-
         number_can_trade =
           count / S.to_integer(wrappers_needed)
           |> Float.floor
@@ -89,8 +84,6 @@ defmodule SSCT do
         else
           wrappers_remaining =
             count - number_can_trade * S.to_integer(wrappers_needed)
-
-          IO.puts "trade #{type} wrappers #{number_can_trade} times"
 
           # subtract spent wrappers
           new_wrappers = %{elem(acc, 0) | type => wrappers_remaining}
@@ -119,19 +112,9 @@ defmodule SSCT do
 
           new_redemption = update_redemption(elem(acc, 1), type, number_can_trade)
 
-          IO.puts "new wrappers #{new_wrappers |> inspect}"
-          IO.puts "new redemption #{new_redemption |> inspect}"
-
-          # require IEx; if type == "dark", do: IEx.pry
-
           {new_wrappers, new_redemption}
         end
       end)
-
-    IO.puts "updated_wrappers #{updated_wrappers |> inspect}"
-    IO.puts "updated_redemption #{updated_redemption |> inspect}"
-
-    IO.puts "can trade? #{can_trade?(updated_wrappers, String.to_integer(wrappers_needed))}"
 
     if can_trade?(updated_wrappers, String.to_integer(wrappers_needed)) do
       make_trades(updated_redemption, updated_wrappers, wrappers_needed)
@@ -174,7 +157,26 @@ defmodule SSCT do
     'input/orders.csv' |> CSVLixir.read |> Enum.to_list
   end
 
-  defp map_order_list([[header1, header2, header3, header4] | orders]) do
+  defp write_order_list(order_list) do
+    {:ok, file} = File.open "output/redemptions.csv", [:write]
+
+    order_list |> Enum.each(
+      fn %{"redemptions" => %{
+        "dark" => dark,
+        "milk" => milk,
+        "white" => white,
+        "sugar free" => sugar_free
+      }} ->
+        file |> IO.binwrite(
+          "milk #{milk},dark #{dark},white #{white},sugar free #{sugar_free}\n"
+        )
+      end
+    )
+
+    File.close file
+  end
+
+  def map_order_list([[header1, header2, header3, header4] | orders]) do
     orders |> Enum.map(fn [col1, col2, col3, col4] ->
       %{header1 => col1,
         header2 => col2,
@@ -188,7 +190,7 @@ defmodule SSCT do
   end
 
   defp print_order_list(order_list) do
-    IO.puts "#### Order List & Redemptions ####"
+    IO.puts "#### input"
 
     order_list |> Enum.each(
       fn %{
@@ -203,8 +205,33 @@ defmodule SSCT do
           "sugar free" => sugar_free
         }
       } ->
-        IO.puts "cash: #{cash}, price: #{price}, " <>
-          "wrappers needed: #{wrappers_needed}, type: #{type} "
+        IO.puts "\n  cash: #{cash}, price: #{price}, " <>
+          "wrappers needed: #{wrappers_needed}, type: #{type}\n"
+        # IO.puts "\n  dark: #{dark}, milk: #{milk}, white: #{white}, " <>
+        #   "sugar free: #{sugar_free}\n"
+      end
+    )
+    order_list
+  end
+
+  defp print_redemptions(order_list) do
+    IO.puts "#### output ####"
+
+    order_list |> Enum.each(
+      fn %{
+        "cash" => cash,
+        "price" => price,
+        "wrappers needed" => wrappers_needed,
+        "type" => type,
+        "redemptions" => %{
+          "dark" => dark,
+          "milk" => milk,
+          "white" => white,
+          "sugar free" => sugar_free
+        }
+      } ->
+        # IO.puts "cash: #{cash}, price: #{price}, " <>
+        #   "wrappers needed: #{wrappers_needed}, type: #{type} "
         IO.puts "\n  dark: #{dark}, milk: #{milk}, white: #{white}, " <>
           "sugar free: #{sugar_free}\n"
       end
