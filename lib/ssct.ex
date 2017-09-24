@@ -1,4 +1,11 @@
 defmodule SSCT do
+  @input_file_path 'input/orders.csv'
+  @output_file_path 'output/redemptions.csv'
+  @header ["cash", "price", "wrappers needed", "type"]
+
+  @doc """
+  Reads orders from input file and writes redemptions to output file
+  """
   def start(_type, _args) do
     read_orders() |> Trades.fill_orders |> write_redemptions
 
@@ -6,14 +13,16 @@ defmodule SSCT do
   end
 
   defp read_orders do
-    'input/orders.csv' |> CSVLixir.read |> Enum.to_list
+    if File.exists?(@input_file_path),
+      do: @input_file_path |> CSVLixir.read |> Enum.to_list,
+    else: [@header]
   end
 
-  defp write_redemptions(orders) do
-    {:ok, file} = File.open "output/redemptions.csv", [:write]
+  defp write_redemptions(redemptions) do
+    {:ok, file} = File.open @output_file_path, [:write, :utf8]
 
-    orders |> Enum.each(fn %{"redemptions" => redemptions} ->
-      IO.binwrite(file, redemptions |> output_string)
+    redemptions |> Enum.each(fn redemption ->
+      IO.write(file, redemption |> output_string)
     end)
 
     File.close file
