@@ -3,6 +3,10 @@ defmodule SSCT do
   @output_file_path 'output/redemptions.csv'
   @header ["cash", "price", "wrappers needed", "type"]
 
+  @moduledoc """
+  Provides functions to read and write input and output files.
+  """
+
   @doc """
   Reads orders from input file and writes redemptions to output file
   """
@@ -19,13 +23,16 @@ defmodule SSCT do
   end
 
   defp write_redemptions(redemptions) do
-    {:ok, file} = File.open @output_file_path, [:write, :utf8]
+    case File.open(@output_file_path, [:write, :utf8]) do
+      {:ok, file} ->
+        redemptions |> Enum.each(fn redemption ->
+          IO.write(file, redemption |> output_string)
+        end)
 
-    redemptions |> Enum.each(fn redemption ->
-      IO.write(file, redemption |> output_string)
-    end)
-
-    File.close file
+        File.close file
+      _ ->
+        IO.puts :stderr, "Problem writing to output file"
+    end
   end
 
   defp output_string(%{

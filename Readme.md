@@ -5,8 +5,8 @@ ___
 
 ## Introduction
 
-Requirements:
-* elixir 1.5.1 - probably runs ok on lower versions but wasn't specifically
+Language:
+* elixir 1.5.1 - probably runs fine on lower versions, but wasn't specifically
 tested on them
 
 ## How to run
@@ -19,9 +19,9 @@ mix deps.get
 
 ### 2a. Generate output file
 
-Read orders from `input/orders.csv` and write redemptions to `output/redemptions.csv`.
-If the output file doesn't exist, it will be created.  If it does exist,
-it will be overwritten.
+Read orders from `input/orders.csv` and write redemptions to
+`output/redemptions.csv`.  If the output file doesn't exist, it will be created.
+If it does exist, it will be overwritten.
 
 ```bash
 mix run

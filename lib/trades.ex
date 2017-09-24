@@ -4,8 +4,8 @@ defmodule Trades do
   @min_wrappers_needed 2
   @min_price 1
 
-  @doc ~S"""
-  Calculates redemptions based on orders.
+  @moduledoc ~S"""
+  Provides functions to fill an order by making tades.
 
   ## Examples
 
@@ -38,6 +38,10 @@ defmodule Trades do
       ...> ])
       [%{"dark" => 0, "milk" => 0, "sugar free" => 0, "white" => 0}]
 
+  """
+
+  @doc """
+    Calculates redemptions based on orders.
   """
   def fill_orders(orders) do
     orders |> map_orders |> trade(:cash) |> trade(:wrappers) |> format
