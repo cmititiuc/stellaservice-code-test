@@ -9,11 +9,11 @@ defmodule SSCT do
     'input/orders.csv' |> CSVLixir.read |> Enum.to_list
   end
 
-  defp write_redemptions(order_list) do
+  defp write_redemptions(orders) do
     {:ok, file} = File.open "output/redemptions.csv", [:write]
 
-    order_list |> Enum.each(fn %{"redemptions" => redemptions} ->
-      IO.binwrite(file, output_string(redemptions))
+    orders |> Enum.each(fn %{"redemptions" => redemptions} ->
+      IO.binwrite(file, redemptions |> output_string)
     end)
 
     File.close file
